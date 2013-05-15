@@ -1,4 +1,0 @@
-/home/taylor/Dropbox/Grad_Spring13/CAD/project/build/main/CMakeFiles/bsp.dir
-/home/taylor/Dropbox/Grad_Spring13/CAD/project/build/bsptree/CMakeFiles/bsptree.dir
-/home/taylor/Dropbox/Grad_Spring13/CAD/project/build/glew/CMakeFiles/glew.dir
-/home/taylor/Dropbox/Grad_Spring13/CAD/project/build/math/CMakeFiles/math.dir
