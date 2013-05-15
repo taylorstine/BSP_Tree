@@ -1,0 +1,1 @@
+/usr/bin/c++    -Wall -Wextra -fopenmp -DOPENMP -g     CMakeFiles/bsp.dir/main_bsp.cpp.o  -o bsp -rdynamic ../bsptree/libbsptree.a ../math/libmath.a -Wl,-Bstatic -lSDLmain -Wl,-Bdynamic -lSDL -lpthread -lSDL_image -lSDL_ttf -lpng -lz -lGLU -lGL -lSM -lICE -lX11 -lXext -lglut -lXmu -lXi ../glew/libglew.a 

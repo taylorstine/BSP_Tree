@@ -1,0 +1,5 @@
+
+bunnytex.obj is the only model that has texture coordinates.
+The rest do not. Course staff may, over the course of the project,
+add additional models for you to test your implementation.
+

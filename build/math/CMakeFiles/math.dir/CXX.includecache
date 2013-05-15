@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/taylor/Dropbox/Grad_Spring13/CAD/project/src/math/math.hpp
+algorithm
+-
+cmath
+-
+
+/home/taylor/Dropbox/Grad_Spring13/CAD/project/src/math/vector.cpp
+math/vector.hpp
+/home/taylor/Dropbox/Grad_Spring13/CAD/project/src/math/math/vector.hpp
+
+/home/taylor/Dropbox/Grad_Spring13/CAD/project/src/math/vector.hpp
+math/math.hpp
+/home/taylor/Dropbox/Grad_Spring13/CAD/project/src/math/math/math.hpp
+algorithm
+-
+cassert
+-
+cmath
+-
+iostream
+-
+
