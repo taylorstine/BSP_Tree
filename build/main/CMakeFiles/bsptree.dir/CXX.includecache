@@ -1,0 +1,46 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/taylor/Git/CSG/src/main/bsptree.cpp
+bsptree.hpp
+/home/taylor/Git/CSG/src/main/bsptree.hpp
+math/vector.hpp
+/home/taylor/Git/CSG/src/main/math/vector.hpp
+iostream
+-
+
+/home/taylor/Git/CSG/src/main/bsptree.hpp
+mesh.hpp
+/home/taylor/Git/CSG/src/main/mesh.hpp
+
+/home/taylor/Git/CSG/src/main/mesh.hpp
+math/math.hpp
+/home/taylor/Git/CSG/src/main/math/math.hpp
+math/vector.hpp
+/home/taylor/Git/CSG/src/main/math/vector.hpp
+vector
+-
+
+/home/taylor/Git/CSG/src/math/math.hpp
+algorithm
+-
+cmath
+-
+
+/home/taylor/Git/CSG/src/math/vector.hpp
+math/math.hpp
+/home/taylor/Git/CSG/src/math/math/math.hpp
+algorithm
+-
+cassert
+-
+cmath
+-
+iostream
+-
+

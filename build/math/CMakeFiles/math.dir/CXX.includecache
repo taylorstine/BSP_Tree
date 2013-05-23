@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/taylor/Git/CSG/src/math/math.cpp
+math/math.hpp
+/home/taylor/Git/CSG/src/math/math/math.hpp
+
+/home/taylor/Git/CSG/src/math/math.hpp
+algorithm
+-
+cmath
+-
+
+/home/taylor/Git/CSG/src/math/vector.cpp
+math/vector.hpp
+/home/taylor/Git/CSG/src/math/math/vector.hpp
+
+/home/taylor/Git/CSG/src/math/vector.hpp
+math/math.hpp
+/home/taylor/Git/CSG/src/math/math/math.hpp
+algorithm
+-
+cassert
+-
+cmath
+-
+iostream
+-
+

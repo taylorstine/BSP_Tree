@@ -1,0 +1,194 @@
+struct BSP_tree{
+  TreeTriangle triangle;
+  BSP_tree * front;
+  BSP_tree * back;
+  BSP_tree *parent;
+}
+
+struct TreeTriangle{
+  Vector3 vertices[3];
+  Vector3 normal();
+};
+
+void insert(BSP_tree * tree, std::vector<TreeTriangle> list,
+	    std::vector<TreeTriangle> &inside, std::vector<TreeTriangle> &outside)
+{
+  std::vector<TreeTriangle> to_add = list;
+  TreeTriangle t;
+  while(!to_add.empty()){
+    BSP_tree* root = tree;
+    t = to_add.back();
+    to_add.pop_back();
+    while(root!=NULL){
+      Vector3 &a = t.vertices[0];
+      Vector3 &b = t.vertices[1];
+      Vector3 &c = t.vertices[2];
+      float fa = f(a, root->triangle);
+      float fb = f(b, root->triangle);
+      float fc = f(c, root->triangle);
+      if(fabs(fa) < EPSILON || fa!=fa)
+	fa = 0.0;
+      if(fabs(fb) < EPSILON || fb!=fb)
+	fb = 0.0;
+      if(fabs(fc) < EPSILON || fc!=fc)
+	fc = 0.0;
+      assert(fa==fa);
+      assert(fb==fb);
+      assert(fc==fc);
+      
+  
+      //all points are on the front side of the plane
+      if(fa<=0  && fb<=0 && fc<=0){
+	if(root->back == NULL){
+	  inside.push_back(t);
+	  break;
+	}
+	root = root->back;
+	continue;
+      }
+      //all points are on the back side of the plane
+      else if(fa>=0  && fb>=0 && fc>=0){
+	if(root->front == NULL){
+	  outside.push_back(t);
+	  break;
+	}
+	root = root->front;
+	continue;
+      }
+      //we have to split the triangle
+      else{
+	//std::cout<<"Split"<<std::endl;
+	if(fa*fc>=0){
+	  swap(fb, fc);
+	  swap(b,c);
+	  swap(fa, fb);
+	  swap(a,b);
+	}
+	else if(fb*fc>=0){
+	  swap(fa,fc);
+	  swap(a,c);
+	  swap(fa,fb);
+	  swap(a,b);
+	}
+	Vector3 A =intersect(root->triangle.normal(), root->triangle.vertices[0], a, c);
+	Vector3 B =intersect(root->triangle.normal(), root->triangle.vertices[0], b, c);
+	TreeTriangle T1(a,b,A);
+	TreeTriangle T2(b,B,A);
+	TreeTriangle T3(A,B,c);
+	to_add.push_back(T1);
+	to_add.push_back(T2);
+	to_add.push_back(T3);
+	break;
+      }
+    } 
+  }
+  
+  
+}
+
+void traverse(BSP_tree* node, std::vector<TreeTriangle> &list)
+{
+  std::vector<BSP_tree*> stack;
+  stack.push_back(node);
+  BSP_tree * cur;
+  while(!stack.empty()){
+    cur = stack.back();
+    stack.pop_back();
+    list.push_back(cur->triangle);
+    if(cur->front != NULL) stack.push_back(cur->front);
+    if(cur->back != NULL) stack.push_back(cur->back);
+  }
+}
+
+
+
+
+void BSP_tree::add(std::vector<TreeTriangle> to_add)
+{
+  TreeTriangle t;
+  while(!to_add.empty()){
+    BSP_tree * ancestor = NULL;
+    BSP_tree* root = this;
+    t = to_add.back();
+    to_add.pop_back();
+    while(root!=NULL){
+      Vector3 &a = t.vertices[0];
+      Vector3 &b = t.vertices[1];
+      Vector3 &c = t.vertices[2];
+      float fa = f(a);
+      float fb = f(b);
+      float fc = f(c);
+      if(fabs(fa) < EPSILON)
+	fa = 0.0;
+      if(fabs(fb) < EPSILON)
+	fb = 0.0;
+      if(fabs(fc) < EPSILON)
+	fc = 0.0;
+  
+      //all points are on the front side of the plane
+      if(fa<=0  && fb<=0 && fc<=0){
+	if(root->back == NULL){
+	  root->back = new BSP_tree(t);
+	  root->back->parent = root;
+	  break;
+	}
+	ancestor = root;
+	root = root->back;
+	continue;
+      }
+      //all points are on the back side of the plane
+      else if(fa>=0  && fb>=0 && fc>=0){
+	if(root->front == NULL){
+	  root->front = new BSP_tree(t);
+	  root->front->parent = root;
+	  break;
+	}
+	ancestor = root;
+	root = root->front;
+	continue;
+      }
+      //we have to split the triangle
+      else{
+	//std::cout<<"Split"<<std::endl;
+	if(fa*fc>=0){
+	  swap(fb, fc);
+	  swap(b,c);
+	  swap(fa, fb);
+	  swap(a,b);
+	}
+	else if(fb*fc>=0){
+	  swap(fa,fc);
+	  swap(a,c);
+	  swap(fa,fb);
+	  swap(a,b);
+	}
+	Vector3 A =intersect(triangle.normal(), triangle.vertices[0], a, c);
+	Vector3 B =intersect(triangle.normal(), triangle.vertices[0], b, c);
+	TreeTriangle T1(a,b,A);
+	TreeTriangle T2(b,B,A);
+	TreeTriangle T3(A,B,c);
+	to_add.push_back(T1);
+	to_add.push_back(T2);
+	to_add.push_back(T3);
+	break;
+      }
+    } 
+    //    std::cout<<to_add.size()<<std::endl;
+  }
+}
+
+
+Vector3 intersect(const Vector3 n, const Vector3 p0, const Vector3 a, const Vector3 c){
+  float num = dot(n,a);
+  Vector3 cma = c-a;
+  float denom = dot(n,cma);
+  float D = - dot(n,p0);
+  float t = -(num+D)/denom;
+  return a + t * (c-a);
+}
+
+
+float BSP_tree::f(Vector3 p){
+  Vector3 n = triangle.normal();
+  return dot(n, p-triangle.vertices[0]);
+}

@@ -64,10 +64,6 @@ BSP_tree* create_tree(std::vector<TreeTriangle> triangles){
   return tree;
 }
 
-//implement here
-void BSP_tree::add(TreeTriangle to_add){
-
-}
 void BSP_tree::add(std::vector<TreeTriangle> to_add)
 {
   TreeTriangle t;
@@ -114,7 +110,7 @@ void BSP_tree::add(std::vector<TreeTriangle> to_add)
       }
       else if(fa==0  && fb==0 && fc==0){
 	while(root != NULL){
-	  root = root->front
+	  root = root->front;
 	}
 	if(root->front == NULL){
 	  root->front = new BSP_tree(t);

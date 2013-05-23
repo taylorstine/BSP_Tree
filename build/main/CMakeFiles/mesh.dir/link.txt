@@ -1,0 +1,2 @@
+/usr/bin/ar cr libmesh.a  CMakeFiles/mesh.dir/mesh.cpp.o
+/usr/bin/ranlib libmesh.a

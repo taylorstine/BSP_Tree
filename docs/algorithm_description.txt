@@ -1,0 +1,148 @@
+One of the key problems in computer aided design and graphics is determining what objects are visible relative to one another, with a constantly changing viewpoint.  Furthermore, the problem of surface to surface interference is difficult to classify for models with a complex geometry.  When a scene or rendering consists of several models, this problem becomes even more difficult.
+    In order to resolve these issues, graphics software engineers utilize a spatial data structure known as a binary space partitioning tree (a.k.a. BSP tree).  The BSP tree represents a way to recursively divide a scene along two sides of a plane, until some partitioning criterion is met.  There are many similar data structures known to computer graphics, (octrees, k-d tree, bounding box hierarchy etc.) but BSP trees provide us with the most flexibility in partitioning our scene.  That flexibility results from our ability to orient the partitioning plane in any direction, without being constrained by orthogonality as in octrees or k-d trees.
+    The construction of a BSP tree is simple to visualize.  Image a scene consisting of three triangles.  The key properties of the implicit planes these triangles define in 3D space is that for all points on one side of the plane p^{+} we can easily create a function /f_{1}(p^{+}) > 0.  Similarly for all points on the other side of the plane, /f_{1}(p^{-}) < 0.  Using this property of implicit planes we can define on which side of the plane a triangle (consisting of three points) lies.  Initially, let us assume that all of the triangles in our scene are either on one side of our partitioning plane defined by our triangle.  We can pick one of the triangles and partition the other triangles about it with pseudo code as follows:
+partition = triangles[0]
+for triangle in triangles[1:end]
+    for p in points of triangle
+    	if(/f_{1}(p) < 0) then	
+		     return in_back_of_plane;
+	else if(f_{1}(p) >0) then
+	     		 return in_front_of_plane;
+This example can be generalized t many object, again assuming the simple case where none of our polygons span our dividing plane.  In this example, f_{1}(p) is the implicit function of a plane created by triangles with counter clockwise vertices a, b, and c:
+f_{1}(p) = ((b-a) x (c-a)) \dot (p-a) = 0
+However it can be faster to store the values of the implicit plane equation in the form:
+Ax + By + Cz + D = 0
+This is the same expression, and can be faster to solve than equation (1).  Here the constant D is equal to:
+D = -n \dot a
+Storing the equation in this form can reduce some computation time associated with taking the cross product.  Thus, this naturally leads to the follow pseudo-code for BSP tree construction:
+tree.node = triangles[0]
+for i \in {2,...,N}
+tree.add(triangles[i])
+
+function add(triangle T)
+ if(f(a) < 0 and f(b) < 0 and f(c) < 0) then
+   if(back-subtree does not exist) then
+    create back-subtree
+    back-subtree.node = T
+   else
+    front-subtree.add(T)
+ else if (f(a) > 0 and f(b) > 0 and f(c) > 0) then
+  if(front-subtree does not exist) then
+   create front-subtree
+   front-subtree.node = T
+  else
+   front-subtree.add(T)
+ else
+  ?????
+From our above constraints on building the tree (i.e. none of the triangles span the tree) we have not yet defined how to handle the case of when some functions of the vertices of the triangle are positive, and others are negative.  In this case, the only thing we can do is split the triangle into three new triangles.
+
+(figure)
+
+Assuming that a and b are always on one side of the triangle and c is on the other the new triangles will always be equal to:
+T_{1} = (a, b, A)
+T_{2} = (b, B, A)
+T_{3} = (A, B, c)
+
+It is clear from this representation that a special case will emerge when the triangle is split perfectly down the middle.  Although rare, We will account for this by not splitting the triangles if this occurs.  Thus our final implementation of the BSP tree creation becomes:
+function add(triangle T)
+ fa = f(a)
+ fb = f(b)
+ fc = f(c)
+ if(abs(fa) < \epsilon)
+  fa = 0
+ if(abs(fb) < \epsilon)
+  fb = 0
+ if(abs(fc) < \epsilon)
+  fc = 0
+ if(fa \leq 0 and fb \leq 0 and fc \leq 0) then
+  if(back-subtree does not exist)
+   created back-subtree
+   back-subtree.node = T
+  else
+   back-subtree.add(T)
+ else if (fa \geq 0 and fb \geq 0 and fc \geq 0)
+  if(front-subtree does not exist)
+   create front-subtree
+   front-subtree.node = T
+  else
+   front-subtree.add(T)  
+  else cut the triangle
+   compute A
+   compute B
+   T_{1} = (a, b, A)
+   T_{2} = (b, B, A)
+   T_{3} = (A, B, c)
+   if(fc \geq 0)
+    back-subtree.add(T_{1})
+    back-subtree.add(T_{2})
+    front-subtree.add(T_{3})
+   else
+    front-subtree.add(T_{1})
+    front-subtree.add(T_{2})
+    back-subtree.add(T_{3})
+
+The last component of building our BSP tree is computing A and B.  Computing the A and B intersection points consist of simply solving a ray-plane intersection equation:
+p(t) = a + t(c-a)
+n \dot (a+t(c-a)) + D = 0
+t = -\frac{n \dot a + D}{n \dot (c-a)}
+A = a + t(c-a)
+
+Our creation algorithm for a BSP tree is now complete.
+
+Merging two trees
+
+Because of their ability to divide a series of polygons by an arbitrarily chosen plane, BSP trees offer the ideal data structure to perform Boolean operations on arbitrary pieces of geometry.  In order to perform these operations, we have developed an algorithm that "merges" two BSP trees.  Assuming a simple case of just two models in a scene with which we want to perform Boolean operations, the first thing we need to do is create BSP trees for both of the geometries.  These trees are created independently for each geometry initally, so we will only be testing polygons in one model for each BSP tree creation.  When we create these BSP trees, instead of simply arbitrarily choosing planes to divide the polygons by, we will choose to divide the polygons by the polygons on the surface of the model.  Thus these BSP trees allow us to create an efficient structure to traverse the boundaries of a complicated mesh.  Now that we have two representations of the boundaries of the models, we begin to merge them by traversing one of the trees to obtain a list of polygons that represent the surface boundary of one of the models.  We use this list of polygons because it contains new polygons created by splitting the polygons of the model by the dividing planes chosen when creating the tree.  These could not be captured if we just used the list of polygons provided with the model for the next step in the merging algorithm.  The traversal of the BSP tree is quite simple:
+
+function traverse(tree)
+ if(tree does not exist)
+  exit
+ polygon-list.add(tree.polygon)
+ traverse(tree.back-subtree)
+ traverse(tree.front-subtree)
+ return polygon-list
+
+This will give us a list of polygons represented as a pre-order traversal of the tree.  Now that we have a list of polygons from the tree that represents model A, we have to push these polygons through the tree of model B so that we can see how they will be classified according to B's dividing polygons.  The algorithm looks very similar to the add function listed above.  This algorithm assumes that we are working with models made up of only triangles.
+
+for i \in {2,...,N}
+insert(tree_B.root, A_triangles[i])
+
+function insert(Node node, triangle T)
+ fa = f(a)
+ fb = f(b)
+ fc = f(c)
+ if(abs(fa) < \epsilon)
+  fa = 0
+ if(abs(fb) < \epsilon)
+  fb = 0
+ if(abs(fc) < \epsilon)
+  fc = 0
+ if(fa \leq 0 and fb \leq 0 and fc \leq 0) then
+  if(back-subtree does not exist)
+   inside-model.add(T)
+  else
+   insert(node.back-subtree, T)
+ else if (fa \geq 0 and fb \geq 0 and fc \geq 0)
+  if(front-subtree does not exist)
+   outside-model.add(T)
+  else
+   insert(node.front-subtree, T)
+  else cut the triangle
+   compute A
+   compute B
+   T_{1} = (a, b, A)
+   T_{2} = (b, B, A)
+   T_{3} = (A, B, c)
+   if(fc \geq 0)
+    insert(node.back-subtree, T_{1})
+    insert(node.back-subtree, T_{2})
+    insert(node.front-subtree, T_{3})
+   else
+    insert(node.front-subtree, T_{1})
+    insert(node.front-subtree, T_{2})
+    insert(node.back-subtree, T_{3})
+
+In this algorithm, instead of adding these triangles to the tree, we are traversing the tree to see where they belong in the BSP representation of the model.  If we get to a point where the triangle is classified as being behind the current dividing plane and there are no there are no other dividing planes in the back-subtree of the BSP tree, then we can classify this triangle as being inside of the model.  The same can be said about a triangle completely in front of the dividing plane.  An interesting case emerges when we find that the dividing plane we are testing splits the triangle.  In this case, we cannot yet classify the newly split triangles as completely inside or outside of the polygon, because we could have split a triangle that may intersect the dividing plane, but isn't split by the boundary of the model.  The only way to classify these newly created triangles is to push them through the tree again.  Once all of the triangles have been inserted, we now have a list of triangles from model B that are inside/outside of model A.  We perform this same procedure for model A, to obtain two similar lists.  Once we have these lists, it is a trivial matter to combine them to obtain the Boolean operations we desire.
+
+The reason we choose to use BSP trees and use this algorithm is because of the efficiency of merging the two trees.  The operation of merging two trees takes milliseconds, and can be done in O(nlogn) efficiency in the best case and O(n^{2}) in the worst case where we have a very unbalanced tree.  The most computationally expensive portion of the algorithm comes from actually creating the trees.  For convex polygons the algorithm can take up to O(n^{2}) time, because this creates a very unbalanced tree.  For models with concavity, the creation algorithm can get down to O(n\log(n)) efficiency, but can take longer to allocate memory for the new triangles created by the partitioning plane.  This is much faster than the O(n^3) case of comparing all planes to all other planes of a naive implementation of model Boolean operations.  The pre-processing time is the whole purpose of BSP trees.  They are used to pre-cache the information we need in the pre-processing step, to allow for quick traversal when we need to render, merge, or test for collisions.  This is the reason they are most often used in video games and CAD systems.  Their traversal efficiency allows us to create the Boolean operations for these models in a matter of seconds.
+
+

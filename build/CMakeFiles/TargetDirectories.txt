@@ -1,0 +1,4 @@
+/home/taylor/Git/CSG/build/main/CMakeFiles/bsp.exe.dir
+/home/taylor/Git/CSG/build/main/CMakeFiles/bsptree.dir
+/home/taylor/Git/CSG/build/math/CMakeFiles/math.dir
+/home/taylor/Git/CSG/build/main/CMakeFiles/mesh.dir

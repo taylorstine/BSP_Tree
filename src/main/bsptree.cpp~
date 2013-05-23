@@ -1,0 +1,164 @@
+#include "bsptree.hpp"
+#include "math/vector.hpp"
+#include <iostream>
+
+#define EPSILON 1e-5
+#define MINIMUM_CLAMP(val)(fabs(val)<EPSILON ? (val) = 0 : (val) = (val))
+template<class T> inline void SWAP(T &a, T &b){T c = b; b = a; a = c;}
+
+Btree::Btree(const Mesh *mesh):root(NULL){
+  this->mesh = mesh;
+  this->tree_normals = mesh->normals;
+  this->tree_vertices = mesh->vertices;
+  this->tree_triangles.push_back(mesh->triangles[0]);
+  this->root = new Bnode(LAST_TRIANGLE_INDEX());
+  std::cout<<"Creating BSP tree..."<<std::endl;
+  add(mesh->triangles);
+}
+
+float distance_to_plane(const Vector3 &to_be_tested, const Vector3 &normal,
+			const Vector3 &point_on_plane){
+  return dot(normal, to_be_tested) + dot(-normal, point_on_plane);
+}
+
+Vertex Btree::compute_intersect(Bnode *current, const Vertex &a, const Vertex &c){
+  Vertex V;
+  Vector3 n = NORMAL( current );
+  float d = D( current );
+  float t = -(dot( n,a.position ) + d )/(dot( n , c.position-a.position ));
+  V.position = a.position + t * ( c.position - a.position );
+  V.normal = normalize( ( t-1 ) * a.normal + t*c.normal);
+  V.tex_coord = a.tex_coord + t *( c.tex_coord - a.tex_coord );
+  return V;
+}
+
+
+//for some reason there is an infinitle loop where the triangle
+//splits itself and then continues to try to split itself
+void Btree::add(TriangleList triangles){
+  float fa=0.0, fb=0.0, fc=0.0;
+  Vertex a,b,c;
+  int a_idx = -1, b_idx = -1, c_idx = -1, A_idx = -1, B_idx = -1;
+  //set the current node to the root
+  Bnode *current = this->root;
+
+  while(!triangles.empty()){
+    std::cout<<triangles.size()<<" triangles left"<<std::endl;
+    //get the current triangle
+    Triangle tri = triangles.back();
+    
+    //store the vertices of the triangle for splitting later
+    a = V0( tri );
+    b = V1( tri );
+    c = V2( tri );
+    
+    //store the triangle indices, in case we need to split
+    a_idx = tri.indices[ 0 ];
+    b_idx = tri.indices[ 1 ];
+    c_idx = tri.indices[ 2 ];
+
+    //find the (signed) distance of each vertex to the
+    //current partitioning plane
+    fa = distance_to_plane( P0( tri ), NORMAL( current ), Q0( current ) );
+    fb = distance_to_plane( P1( tri ), NORMAL( current ), Q0( current ) );
+    fc = distance_to_plane( P2( tri ), NORMAL( current ), Q0( current ) );
+
+    //if the values of the distances of the vertices are smaller than
+    //a certain value, just set the distance to zero
+    MINIMUM_CLAMP(fa);
+    MINIMUM_CLAMP(fb);
+    MINIMUM_CLAMP(fc);
+    
+    //If all vertices in the triangle are completley in back of the partioing triangle plane
+    if(fa<=0 && fb<=0 && fc<=0){
+      //if the back tree is empty
+      if(current->back == NULL){
+	//done classifying that triangle
+	triangles.pop_back();
+	//add the triangle to the tree's list of triangles
+	tree_triangles.push_back(tri);
+	//create a new node in the tree, and assign the last triangle index to it
+	current->back = new Bnode(LAST_TRIANGLE_INDEX());
+	current = root;
+      }
+      //if the front node is not empty
+      else{
+	//move to the front node and continue
+	current = current->back;
+      }
+    }
+    //if all vertices in the triangle are completly in front of the partitioning triangle plane
+    else if(fa>=0 && fb>=0 && fc>=0){
+      //if the front node is empty
+      if(current->front == NULL){
+	//done classifying this triangle
+	triangles.pop_back();
+	//add this triangle to the tree's triangle list
+	tree_triangles.push_back(tri);
+	//create a new node
+	current->front = new Bnode(LAST_TRIANGLE_INDEX());
+	current = root;
+      }
+      //if the front is not empty
+      else{
+	//set the front to the current node and continue
+	current = current->front;
+      }
+    }
+    //if some of the vertices of the triangle are in front
+    //and some are behind, then we have to split the triangle
+    else{
+      triangles.pop_back();
+      //Here we determine which points are on which side of the triangle, 
+      //and then swap the points so that point c is always the only point 
+      //on one side of the plane and a and b are on the other side
+      if(fa*fc >= 0.0f){
+	SWAP(fb, fc);
+	SWAP(b, c);
+	SWAP(fa, fb);
+	SWAP(a, b);
+      }
+      else if(fb*fc >=0.0f){
+	SWAP(fa,fc);
+	SWAP(a,c);
+	SWAP(fa, fb);
+	SWAP(a,b);
+      }
+      //find the intersection points A and B
+      Vertex A = compute_intersect( current, a, c);
+      Vertex B = compute_intersect( current, b, c);
+
+      //Add the intersection points to the tree vertex list
+      tree_vertices.push_back(A);
+      A_idx = LAST_VERTEX_INDEX();
+      tree_vertices.push_back(B);
+      B_idx = LAST_VERTEX_INDEX();
+
+      //create the triangles to add to the pile to be added
+      Triangle t1;
+      t1.indices[0] = a_idx;
+      t1.indices[1] = b_idx;
+      t1.indices[2] = A_idx;
+      t1.normal_index = NORMAL_INDEX( current );
+      triangles.push_back(t1);
+      
+      Triangle t2;
+      t2.indices[0] = b_idx;
+      t2.indices[1] = B_idx;
+      t2.indices[2] = A_idx;
+      t2.normal_index = NORMAL_INDEX( current );
+      triangles.push_back(t2);
+
+      Triangle t3;
+      t3.indices[0] = A_idx;
+      t3.indices[1] = B_idx;
+      t3.indices[2] = c_idx;
+      t3.normal_index = NORMAL_INDEX( current );
+      triangles.push_back(t3);
+    }
+
+  }
+}
+
+Bnode::Bnode():front(NULL), back(NULL), triangle_index(-1){}
+Bnode::Bnode(int idx):front(NULL), back(NULL){triangle_index = idx;}
