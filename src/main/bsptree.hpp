@@ -18,6 +18,8 @@ struct Btree{
   NormalList tree_normals;
   const Mesh * mesh;
   Bnode * root;
+  //trigger to tell us when to display triangles and tree triangle information
+  //during tree creation
 
   Btree(const Mesh * mesh);
   ~Btree();
@@ -40,9 +42,10 @@ struct Btree{
 
 
 private:
-  Vertex compute_intersect(Bnode*, const Vertex& a, const Vertex& c);
+  inline Vertex compute_intersect(Bnode* const, const Vertex& a, const Vertex& c);
 };
 
-
+inline float distance_to_plane(const Vector3 &to_be_tested, const Vector3 &normal,
+			const Vector3 &point_on_plane);
 
 #endif

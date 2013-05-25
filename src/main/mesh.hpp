@@ -29,7 +29,8 @@ struct Mesh{
   int num_triangles;
   int num_vertices;
   Vector3 COM;
-  
+
+  char * filename;
   
   Vector3 get_normal(Vector3 a, Vector3 b, Vector3 c);
   bool load(char *filename);

@@ -39,7 +39,6 @@ enum ObjFormat
     VERTEX_UV_NORMAL = 1 << 3
 };
 
-
 bool Mesh::load(char * filename){
 
     std::cout << "Loading mesh from '" << filename << "'..." << std::endl;

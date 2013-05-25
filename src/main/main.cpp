@@ -15,8 +15,6 @@
 template<class T> inline void SWAP(T &a, T &b){T c = b; b = a; a = c;}
 
 
-
-
 SDL_Surface * surface;
 int video_flags= 0x0;
 int Width = SCREEN_WIDTH;
@@ -25,11 +23,14 @@ bool Running;
 Mesh mesh;
 float rx, ry;
 Btree* tree;
+char * filename;
+bool draw_outline= false;
 
 GLfloat model_ambient[] = {.2, .2, .8, 1.0};
 GLfloat model_diffuse[] = {.4, .4, .8, 1.0};
 GLfloat model_specular[] = {.80, .80, .80};
 GLfloat model_shine[] = {121};
+GLfloat model_ambient_and_diffuse[] = {.4, .4, .8, 1.0};
 
 
 void clean_up(){}
@@ -92,6 +93,7 @@ bool init_GL(){
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
+
   //Vector for the position of the light
   Vector3 light0Vec(-2, -2, -1);
   //light poisition
@@ -121,13 +123,24 @@ void process_keypress(const SDL_KeyboardEvent& key){
   case SDLK_DOWN: ry-=2; break;
   case SDLK_ESCAPE: Running = false; break;
   case SDLK_RETURN: std::cout<<"rx "<<rx<<", ry "<<ry<<std::endl; break;
-  case SDLK_t:  break;
+  case SDLK_o: std::cout<<"drawing outline"<<std::endl;
+    draw_outline = !draw_outline; 
+    break;
   default: break;
   }
 }
 
+void process_keystate(){
+  Uint8 *keystate = SDL_GetKeyState(NULL);
+  if(keystate[SDLK_LEFT]) rx+=2;
+  if(keystate[SDLK_RIGHT]) rx-=2;
+  if(keystate[SDLK_UP]) ry+=2;
+  if(keystate[SDLK_DOWN]) ry-=2;
+}
+
 void handle_events(){
   SDL_Event event;
+  process_keystate();
   while(SDL_PollEvent(&event)){
     switch(event.type){
     case SDL_QUIT: Quit(0); break;
@@ -148,27 +161,45 @@ void render(){
   glLoadIdentity();
   glRotatef(ry, 1.0f, 0.0f, 0.0f);
   glRotatef(rx, 0.0f, 1.0f, 0.0f);
-  //  glColor3f(1.0, 0.0, 0.0);
-  /*  glBegin(GL_QUADS);
-     glVertex3f(-1.0, -1.0, -0.0);
-     glVertex3f(-1.0, 1.0, -0.0);
-     glVertex3f(1.0, 1.0, -0.0);
-      glVertex3f(1.0, -1.0, -0.0);
-      glEnd();*/
 
   glTranslatef(-mesh.COM.x, -mesh.COM.y, -mesh.COM.z);
 
   int stride = sizeof(Vertex);
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_NORMAL_ARRAY);
-  glMaterialfv(GL_FRONT, GL_AMBIENT, model_ambient);
-  glMaterialfv(GL_FRONT, GL_SPECULAR, model_specular);
-  glMaterialfv(GL_FRONT, GL_DIFFUSE, model_diffuse);
-  glMaterialfv(GL_FRONT, GL_SHININESS, model_shine);
+  glEnable( GL_COLOR_MATERIAL );
+  glColorMaterial( GL_FRONT, GL_AMBIENT_AND_DIFFUSE );
+  glColor3fv( model_ambient_and_diffuse );
+  //  glColorMaterial( GL_FRONT, GL_SPECULAR );
+  //  glColor3fv( model_specular );
+  //  glMaterialfv(GL_FRONT, GL_AMBIENT, model_ambient);
+  //  glMaterialfv( GL_FRONT, GL_SPECULAR, model_specular );
+  //  glMaterialfv(GL_FRONT, GL_DIFFUSE, model_diffuse);
+  //  glMaterialfv( GL_FRONT, GL_SHININESS, model_shine );
+  
   glNormalPointer(GL_FLOAT, stride, &mesh.vertices[0].normal);
   glVertexPointer(3, GL_FLOAT, stride, &mesh.vertices[0].position);
   glDrawElements(GL_TRIANGLES, mesh.num_triangles *3,
 		 GL_UNSIGNED_INT, &mesh.indices[0]);
+
+  /*  glColor3f(1.0, 0.0, 0.0);
+  glBegin(GL_QUADS);
+     glVertex3f(-1.0, -1.0, -0.0);
+     glVertex3f(-1.0, 1.0, -0.0);
+     glVertex3f(1.0, 1.0, -0.0);
+      glVertex3f(1.0, -1.0, -0.0);
+      glEnd();*/
+
+  if(draw_outline){
+    glColor3f(0.0, 0.0, 0.0);
+    glPointSize(5.0f);
+    glDrawElements(GL_POINTS, mesh.num_vertices,
+		   GL_UNSIGNED_INT, &mesh.indices[0]);
+    glDrawElements(GL_LINES, mesh.num_vertices,
+		   GL_UNSIGNED_INT, &mesh.indices[0]);
+
+  }
+
   SDL_GL_SwapBuffers();
   Frames++;
   {
@@ -196,15 +227,22 @@ void init(){
   ASSERT(init_SDL());
   ASSERT(init_GL());
   resize_window(SCREEN_WIDTH, SCREEN_HEIGHT);
-  mesh.load("models/armadillo.obj");
+  mesh.load(filename);
   rx = -22.0;
   ry = -32.0;
   tree = new Btree(&mesh);
 }
 
+void handle_args( int argc, char **argv ){
+  if(argc > 1)
+    filename = argv[1];
+  else
+    filename = "models/armadillo.obj";
+}
 
 int main( int argc, char **argv )
 {
+  handle_args(argc, argv);
   init();
   main_loop();
   clean_up();
