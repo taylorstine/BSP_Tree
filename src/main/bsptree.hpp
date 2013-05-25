@@ -10,6 +10,7 @@ struct Bnode{
   Bnode();
   Bnode(int triangle_index);
   ~Bnode();
+  void add(Triangle tri);
 };
 
 struct Btree{

@@ -4,7 +4,7 @@
 #include <ctime>
 #include <cstdlib>
 
-#define EPSILON 1e-2
+#define EPSILON 1e-8
 #define MINIMUM_CLAMP(val)(fabs(val)<EPSILON ? (val) = 0 : (val) = (val))
 template<class T> inline void SWAP(T &a, T &b){T c = b; b = a; a = c;}
 
@@ -44,12 +44,10 @@ inline Vertex Btree::compute_intersect(Bnode * const current, const Vertex &a, c
   return V;
 }
 
-
 //for some reason there is an infinitle loop where the triangle
 //splits itself and then continues to try to split itself
 void Btree::add(TriangleList triangles){
   float fa=0.0, fb=0.0, fc=0.0;
-  int front_length = 0, back_length = 0;
   Vertex a,b,c;
   int a_idx = -1, b_idx = -1, c_idx = -1, A_idx = -1, B_idx = -1;
   int current_triangle_size = -1, current_tree_triangle_size = -1;
@@ -60,8 +58,6 @@ void Btree::add(TriangleList triangles){
   while(!triangles.empty()){
     if(triangles.size()%1000 == 0 && current_triangle_size != triangles.size()){
       std::cout<<triangles.size()<<" triangles left"<<std::endl;
-      std::cout<<"front length= "<<front_length<<std::endl;
-      std::cout<<"back length= "<<back_length<<std::endl;
       current_triangle_size = triangles.size();    
     }
 
@@ -100,7 +96,6 @@ void Btree::add(TriangleList triangles){
     //is zero, so there is no point in adding it
     if(fa == 0 && fb == 0 && fc == 0){
       triangles.pop_back();
-      continue;
     }
 
     //If all vertices in the triangle are completley in back of the partioing triangle plane
@@ -114,14 +109,11 @@ void Btree::add(TriangleList triangles){
 	//create a new node in the tree, and assign the last triangle index to it
 	current->back = new Bnode(LAST_TRIANGLE_INDEX());
 	current = this->root;
-	back_length++;
-	continue;
       }
       //if the front node is not empty
       else{
 	//move to the front node and continue
 	current = current->back;
-	continue;
       }
     }
     //if all vertices in the triangle are completly in front of the partitioning triangle plane
@@ -135,14 +127,11 @@ void Btree::add(TriangleList triangles){
 	//create a new node
 	current->front = new Bnode(LAST_TRIANGLE_INDEX());
 	current = this->root;
-	front_length++;
-	continue;
       }
       //if the front is not empty
       else{
 	//set the front to the current node and continue
 	current = current->front;
-	continue;
       }
     }
     //if some of the vertices of the triangle are in front

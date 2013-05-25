@@ -26,10 +26,10 @@ Btree* tree;
 char * filename;
 bool draw_outline= false;
 
-GLfloat model_ambient[] = {.2, .2, .8, 1.0};
-GLfloat model_diffuse[] = {.4, .4, .8, 1.0};
-GLfloat model_specular[] = {.80, .80, .80};
-GLfloat model_shine[] = {121};
+GLfloat model_ambient[] =   {.2, .2, .8, 1.0};
+GLfloat model_diffuse[] =   {.4, .4, .8, 1.0};
+GLfloat model_specular[] =  {1.0, 1.0, 1.0};
+GLint   model_shine =       50;
 GLfloat model_ambient_and_diffuse[] = {.4, .4, .8, 1.0};
 
 
@@ -164,19 +164,19 @@ void render(){
 
   glTranslatef(-mesh.COM.x, -mesh.COM.y, -mesh.COM.z);
 
-  int stride = sizeof(Vertex);
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_NORMAL_ARRAY);
   glEnable( GL_COLOR_MATERIAL );
   glColorMaterial( GL_FRONT, GL_AMBIENT_AND_DIFFUSE );
   glColor3fv( model_ambient_and_diffuse );
   //  glColorMaterial( GL_FRONT, GL_SPECULAR );
   //  glColor3fv( model_specular );
   //  glMaterialfv(GL_FRONT, GL_AMBIENT, model_ambient);
-  //  glMaterialfv( GL_FRONT, GL_SPECULAR, model_specular );
+  glMaterialfv( GL_FRONT, GL_SPECULAR, model_specular );
   //  glMaterialfv(GL_FRONT, GL_DIFFUSE, model_diffuse);
-  //  glMaterialfv( GL_FRONT, GL_SHININESS, model_shine );
-  
+  glMateriali( GL_FRONT, GL_SHININESS, model_shine );
+
+  int stride = sizeof(Vertex);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_NORMAL_ARRAY);
   glNormalPointer(GL_FLOAT, stride, &mesh.vertices[0].normal);
   glVertexPointer(3, GL_FLOAT, stride, &mesh.vertices[0].position);
   glDrawElements(GL_TRIANGLES, mesh.num_triangles *3,
@@ -195,9 +195,6 @@ void render(){
     glPointSize(5.0f);
     glDrawElements(GL_POINTS, mesh.num_vertices,
 		   GL_UNSIGNED_INT, &mesh.indices[0]);
-    glDrawElements(GL_LINES, mesh.num_vertices,
-		   GL_UNSIGNED_INT, &mesh.indices[0]);
-
   }
 
   SDL_GL_SwapBuffers();
